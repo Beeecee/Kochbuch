@@ -18,14 +18,12 @@
 </head>
 <body class="pb-24">
 
-    <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-6 hidden">
-        <div class="bg-white rounded-[2rem] p-8 w-full max-w-md text-center shadow-2xl">
+    <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-6 hidden text-center">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-md shadow-2xl">
             <div class="text-4xl mb-4">🔐</div>
-            <h2 class="text-2xl font-black text-slate-800 mb-2">Tresor gesperrt</h2>
-            <p class="text-slate-500 text-sm mb-6">Bitte gib deinen JSONBin API-Key ein, um auf dein Kochbuch zuzugreifen.</p>
-            <input type="password" id="key-input" placeholder="$2a$10$..." class="w-full bg-slate-50 border rounded-2xl p-4 mb-4 outline-none focus:ring-2 focus:ring-orange-500 text-center">
-            <button onclick="saveKey()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-orange-500 transition">Schlüssel anwenden</button>
-            <p class="text-[10px] text-slate-400 mt-4 uppercase tracking-widest text-center">Der Schlüssel wird nur lokal in deinem Browser gespeichert.</p>
+            <h2 class="text-2xl font-black text-slate-800 mb-2 text-center">Tresor gesperrt</h2>
+            <input type="password" id="key-input" placeholder="$2a$10$..." class="w-full bg-slate-50 border rounded-2xl p-4 mb-4 text-center outline-none">
+            <button onclick="saveKey()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold">Schlüssel anwenden</button>
         </div>
     </div>
 
@@ -36,15 +34,21 @@
         </div>
     </nav>
 
-    <div class="sticky top-[61px] z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 p-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
-        <div id="filter-bar" class="flex gap-2">
-            <button onclick="filterBy('Alle')" class="category-pill border bg-white px-5 py-2 rounded-xl text-xs font-bold shadow-sm active">✨ Alle</button>
+    <div class="sticky top-[61px] z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 p-3 space-y-3">
+        <div class="relative max-w-4xl mx-auto">
+            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input type="text" id="search-input" oninput="applyFilters()" placeholder="Rezepte oder Zutaten suchen..." 
+                   class="w-full bg-slate-100/50 border-none rounded-xl py-3 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 transition">
+        </div>
+        
+        <div id="filter-bar" class="flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide pb-1">
+            <button onclick="setCategory('Alle')" class="category-pill border bg-white px-5 py-2 rounded-xl text-xs font-bold shadow-sm active">✨ Alle</button>
         </div>
     </div>
 
     <main class="container mx-auto p-4 max-w-4xl">
         <div id="recipe-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="col-span-full text-center py-24 italic text-slate-400 text-sm">Bereite Tresor vor...</div>
+            <div class="col-span-full text-center py-24 italic text-slate-400 text-sm">Lade Rezepte...</div>
         </div>
     </main>
 
@@ -55,7 +59,7 @@
     <div id="modal" class="fixed inset-0 bg-slate-900/80 z-[60] hidden flex items-end sm:items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-t-[2rem] sm:rounded-[2rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-300">
             <div class="p-6 border-b flex justify-between items-center bg-white sticky top-0 z-10">
-                <h2 id="modal-title" class="text-xl font-extrabold text-slate-800">Neues Rezept</h2>
+                <h2 id="modal-title" class="text-xl font-extrabold text-slate-800 tracking-tight">Neues Rezept</h2>
                 <button onclick="toggleModal(false)" class="bg-slate-100 text-slate-500 w-10 h-10 rounded-full">&times;</button>
             </div>
             <form id="recipe-form" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto pb-10 border-none">
@@ -92,34 +96,17 @@
         
         const catIcons = { "Suppe": "🥣", "Salat": "🥗", "Fleisch": "🥩", "Fisch": "🐟", "Grill": "🔥", "Backen": "🥐", "Snacks": "🍟", "Desserts": "🍨" };
         let dataStore = { rezepte: [] };
+        let currentCategory = "Alle";
 
-        // INITIALISIERUNG
-        window.onload = () => {
-            if (!API_KEY) {
-                document.getElementById('login-overlay').classList.remove('hidden');
-            } else {
-                fetchRecipes();
-            }
-        };
+        window.onload = () => { if (!API_KEY) document.getElementById('login-overlay').classList.remove('hidden'); else fetchRecipes(); };
 
         function saveKey() {
             const val = document.getElementById('key-input').value.trim();
-            if (val) {
-                localStorage.setItem('kb_api_key', val);
-                API_KEY = val;
-                document.getElementById('login-overlay').classList.add('hidden');
-                fetchRecipes();
-            }
+            if (val) { localStorage.setItem('kb_api_key', val); API_KEY = val; document.getElementById('login-overlay').classList.add('hidden'); fetchRecipes(); }
         }
 
-        function logout() {
-            if(confirm("Schlüssel vom Gerät entfernen?")) {
-                localStorage.removeItem('kb_api_key');
-                location.reload();
-            }
-        }
+        function logout() { if(confirm("Schlüssel vom Gerät entfernen?")) { localStorage.removeItem('kb_api_key'); location.reload(); } }
 
-        // FILTER BAR
         const filterBar = document.getElementById('filter-bar');
         Object.entries(catIcons).forEach(([name, icon]) => {
             const btn = document.createElement('button');
@@ -128,28 +115,45 @@
             btn.onclick = (e) => {
                 document.querySelectorAll('.category-pill').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                filterBy(name);
+                setCategory(name);
             };
             filterBar.appendChild(btn);
         });
 
-        // REZEPT LOGIK
         async function fetchRecipes() {
             try {
                 const res = await fetch(`${URL}/latest`, { headers: { "X-Master-Key": API_KEY }});
-                if (!res.ok) throw new Error();
                 const result = await res.json();
                 dataStore.rezepte = result.record.rezepte || [];
                 renderRecipes(dataStore.rezepte);
-            } catch (err) {
-                alert("Fehler: API-Key ungültig oder Netzwerkfehler.");
-                logout();
-            }
+            } catch (err) { alert("API-Fehler."); logout(); }
+        }
+
+        function setCategory(kat) {
+            currentCategory = kat;
+            applyFilters();
+        }
+
+        // DIE LIKE-SUCHE LOGIK
+        function applyFilters() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            
+            const filtered = dataStore.rezepte.filter(r => {
+                const matchesCat = (currentCategory === "Alle" || r.kategorie === currentCategory);
+                const matchesSearch = (
+                    r.titel.toLowerCase().includes(searchTerm) || 
+                    r.anleitung.toLowerCase().includes(searchTerm) ||
+                    r.zutaten_neu.some(z => z.name.toLowerCase().includes(searchTerm))
+                );
+                return matchesCat && matchesSearch;
+            });
+            
+            renderRecipes(filtered);
         }
 
         function renderRecipes(list) {
             const grid = document.getElementById('recipe-list');
-            grid.innerHTML = list.length === 0 ? '<div class="col-span-full text-center py-20 opacity-50">Keine Rezepte gefunden.</div>' : '';
+            grid.innerHTML = list.length === 0 ? '<div class="col-span-full text-center py-20 opacity-50">Nichts gefunden... 🍳</div>' : '';
             list.forEach(r => {
                 grid.innerHTML += `
                     <div class="recipe-card bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
@@ -163,50 +167,28 @@
                                 </div>
                             </div>
                             <h3 class="text-xl font-extrabold text-slate-800 mb-5 leading-tight">${r.titel}</h3>
-                            <div class="space-y-4">
+                            <div class="space-y-4 text-sm">
                                 <div class="bg-orange-50/50 rounded-2xl p-4">
-                                    <div class="space-y-2 text-sm">
-                                        ${(r.zutaten_neu || []).map(z => `
-                                            <div class="flex justify-between border-b border-orange-100/50 pb-1">
-                                                <span class="text-slate-700 font-medium">${z.name}</span>
-                                                <span class="text-slate-400 font-bold">${z.menge}</span>
-                                            </div>
-                                        `).join('')}
-                                    </div>
+                                    ${(r.zutaten_neu || []).map(z => `
+                                        <div class="flex justify-between border-b border-orange-100/50 pb-1 mb-1">
+                                            <span class="text-slate-700 font-medium">${z.name}</span>
+                                            <span class="text-slate-400 font-bold">${z.menge}</span>
+                                        </div>`).join('')}
                                 </div>
-                                ${r.anleitung ? `<div class="px-2 text-slate-600 text-sm italic leading-relaxed">"${r.anleitung}"</div>` : ''}
+                                ${r.anleitung ? `<div class="px-1 text-slate-600 italic">"${r.anleitung}"</div>` : ''}
                             </div>
                         </div>
                     </div>`;
             });
         }
 
-        async function saveToCloud() {
-            try {
-                const res = await fetch(URL, {
-                    method: 'PUT',
-                    headers: { "Content-Type": "application/json", "X-Master-Key": API_KEY },
-                    body: JSON.stringify(dataStore)
-                });
-                if(!res.ok) alert("Speichern fehlgeschlagen!");
-                renderRecipes(dataStore.rezepte);
-            } catch (err) { alert("Netzwerkfehler!"); }
-        }
-
-        // Formular-Handling wie gehabt...
+        // Formular-Handling wie bisher...
         function toggleModal(show) { document.getElementById('modal').classList.toggle('hidden', !show); }
-        function openCreateModal() {
-            document.getElementById('recipe-form').reset();
-            document.getElementById('edit-id').value = '';
-            document.getElementById('modal-title').innerText = 'Neues Rezept';
-            document.getElementById('zutaten-liste').innerHTML = '';
-            addZutatRow();
-            toggleModal(true);
-        }
+        function openCreateModal() { document.getElementById('recipe-form').reset(); document.getElementById('edit-id').value = ''; document.getElementById('modal-title').innerText = 'Neues Rezept'; document.getElementById('zutaten-liste').innerHTML = ''; addZutatRow(); toggleModal(true); }
         function addZutatRow(menge = '', name = '') {
             const container = document.getElementById('zutaten-liste');
             const row = document.createElement('div');
-            row.className = "flex gap-2 items-center";
+            row.className = "flex gap-2 items-center animate-in slide-in-from-left duration-200";
             row.innerHTML = `<input type="text" placeholder="Menge" value="${menge}" class="zutat-menge w-[35%] bg-slate-50 border rounded-lg p-3 text-sm focus:ring-1 focus:ring-orange-500 outline-none"><input type="text" placeholder="Was?" value="${name}" class="zutat-name w-[55%] bg-slate-50 border rounded-lg p-3 text-sm focus:ring-1 focus:ring-orange-500 outline-none"><button type="button" onclick="this.parentElement.remove()" class="w-[10%] text-slate-300"><i class="fas fa-times"></i></button>`;
             container.appendChild(row);
         }
@@ -224,14 +206,12 @@
             document.getElementById('modal-title').innerText = 'Rezept ändern';
             toggleModal(true);
         }
-        async function deleteRecipe(id) {
-            if(!confirm("Löschen?")) return;
-            dataStore.rezepte = dataStore.rezepte.filter(r => r.id !== id);
-            await saveToCloud();
-        }
-        function filterBy(kat) {
-            if (kat === 'Alle') return renderRecipes(dataStore.rezepte);
-            renderRecipes(dataStore.rezepte.filter(r => r.kategorie === kat));
+        async function deleteRecipe(id) { if(!confirm("Löschen?")) return; dataStore.rezepte = dataStore.rezepte.filter(r => r.id !== id); await saveToCloud(); }
+        async function saveToCloud() {
+            try {
+                await fetch(URL, { method: 'PUT', headers: { "Content-Type": "application/json", "X-Master-Key": API_KEY }, body: JSON.stringify(dataStore) });
+                applyFilters();
+            } catch (err) { alert("Fehler beim Speichern!"); }
         }
         document.getElementById('recipe-form').onsubmit = async (e) => {
             e.preventDefault();
@@ -260,6 +240,7 @@
             await saveToCloud();
             toggleModal(false);
         };
+        fetchRecipes();
     </script>
 </body>
 </html>
