@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; -webkit-tap-highlight-color: transparent; }
-        .recipe-card { transition: all 0.3s ease; }
+        .recipe-card { transition: all 0.3s ease; cursor: pointer; }
         .category-pill.active { background-color: #f97316 !important; color: white !important; border-color: #f97316 !important; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); }
         .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.05); }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -22,103 +22,108 @@
         <div class="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl">
             <div class="text-4xl mb-4">🔐</div>
             <h2 class="text-2xl font-black text-slate-800 mb-2">Tresor gesperrt</h2>
-            <p class="text-slate-500 text-sm mb-6">Bitte gib deinen JSONBin API-Key ein.</p>
-            <input type="password" id="key-input" placeholder="$2a$10$..." class="w-full bg-slate-50 border rounded-2xl p-4 mb-4 text-center outline-none focus:ring-2 focus:ring-orange-500">
-            <button onclick="saveKey()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-orange-500 transition shadow-lg">Schlüssel anwenden</button>
+            <input type="password" id="key-input" placeholder="$2a$10$..." class="w-full bg-slate-50 border rounded-2xl p-4 mb-4 text-center outline-none">
+            <button onclick="saveKey()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold">Anwenden</button>
         </div>
     </div>
 
     <nav class="glass-nav sticky top-0 z-40 p-4">
-        <div class="container mx-auto flex justify-between items-center">
+        <div class="container mx-auto flex justify-between items-center px-2">
             <h1 class="text-xl font-extrabold text-slate-800 tracking-tight">🍳 Mein Kochbuch</h1>
-            <button onclick="logout()" class="text-slate-400 text-xs hover:text-red-500 p-2"><i class="fas fa-sign-out-alt"></i></button>
+            <button onclick="logout()" class="text-slate-400 p-2"><i class="fas fa-sign-out-alt"></i></button>
         </div>
     </nav>
 
     <div class="sticky top-[61px] z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 p-3 space-y-3 shadow-sm">
         <div class="relative max-w-4xl mx-auto">
             <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-            <input type="text" id="search-input" oninput="applyFilters()" placeholder="Rezepte oder Zutaten suchen..." 
-                   class="w-full bg-slate-100/50 border-none rounded-xl py-3 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 transition">
+            <input type="text" id="search-input" oninput="applyFilters()" placeholder="Suchen..." class="w-full bg-slate-100/50 border-none rounded-xl py-3 pl-10 pr-4 text-sm outline-none">
         </div>
-        <div id="filter-bar" class="flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide pb-1 max-w-4xl mx-auto">
-            <button id="btn-alle" onclick="setCategory('Alle', this)" class="category-pill border bg-white px-5 py-2 rounded-xl text-xs font-bold shadow-sm transition active">✨ Alle</button>
+        <div id="filter-bar" class="flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide max-w-4xl mx-auto px-1">
+            <button id="btn-alle" onclick="setCategory('Alle', this)" class="category-pill border bg-white px-5 py-2 rounded-xl text-xs font-bold transition active">✨ Alle</button>
         </div>
     </div>
 
     <main class="container mx-auto p-4 max-w-4xl">
-        <div id="recipe-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="col-span-full text-center py-24 italic text-slate-400 text-sm">Bereite Tresor vor...</div>
-        </div>
+        <div id="recipe-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
     </main>
 
-    <button onclick="openCreateModal()" class="fixed bottom-6 right-6 w-16 h-16 bg-orange-500 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl z-50 active:scale-90 transition">
-        <i class="fas fa-plus"></i>
-    </button>
+    <div id="view-modal" class="fixed inset-0 bg-white z-[80] hidden overflow-y-auto animate-in fade-in slide-in-from-bottom duration-300">
+        <div class="max-w-3xl mx-auto pb-20">
+            <div class="sticky top-0 bg-white/90 backdrop-blur-md p-4 flex justify-between items-center border-b z-10">
+                <button onclick="closeView()" class="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full text-slate-600"><i class="fas fa-arrow-left"></i></button>
+                <div id="view-cat-badge" class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">Kategorie</div>
+                <div class="flex gap-2">
+                    <button id="view-edit-btn" class="w-10 h-10 flex items-center justify-center bg-orange-100 rounded-full text-orange-600"><i class="fas fa-edit"></i></button>
+                </div>
+            </div>
+            <div class="p-6 md:p-12">
+                <h2 id="view-title" class="text-3xl md:text-5xl font-black text-slate-900 mb-6 leading-tight">Rezept Name</h2>
+                <div class="flex items-center gap-4 mb-10 text-slate-500 font-bold bg-slate-50 p-4 rounded-2xl w-fit">
+                    <i class="fas fa-users text-orange-500"></i> <span id="view-personen">?</span> Personen
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <div class="md:col-span-1">
+                        <h4 class="text-orange-500 font-black uppercase text-xs tracking-widest mb-4 border-b pb-2">Zutaten</h4>
+                        <div id="view-zutaten" class="space-y-3 text-lg"></div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <h4 class="text-orange-500 font-black uppercase text-xs tracking-widest mb-4 border-b pb-2">Zubereitung</h4>
+                        <p id="view-anleitung" class="text-slate-700 leading-relaxed text-xl whitespace-pre-wrap font-medium italic"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <div id="modal" class="fixed inset-0 bg-slate-900/80 z-[60] hidden flex items-end sm:items-center justify-center backdrop-blur-sm">
+    <div id="modal" class="fixed inset-0 bg-slate-900/80 z-[90] hidden flex items-end sm:items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-t-[2rem] sm:rounded-[2rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-300">
-            <div class="p-6 border-b flex justify-between items-center bg-white sticky top-0 z-10">
+            <div class="p-6 border-b flex justify-between items-center">
                 <h2 id="modal-title" class="text-xl font-extrabold text-slate-800">Neues Rezept</h2>
                 <button onclick="toggleModal(false)" class="bg-slate-100 text-slate-500 w-10 h-10 rounded-full">&times;</button>
             </div>
             <form id="recipe-form" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto pb-10">
                 <input type="hidden" id="edit-id">
-                <input type="text" id="titel" placeholder="Was kochst du?" class="w-full bg-slate-50 border-none rounded-xl p-4 focus:ring-2 focus:ring-orange-500 outline-none font-medium" required>
+                <input type="text" id="titel" placeholder="Titel" class="w-full bg-slate-50 border-none rounded-xl p-4 outline-none focus:ring-2 focus:ring-orange-500 font-medium" required>
                 <div class="flex gap-3">
-                    <select id="kategorie" class="flex-grow bg-slate-50 border-none rounded-xl p-4 focus:ring-2 focus:ring-orange-500 outline-none font-medium text-slate-600" required>
-                        <option value="">Kategorie...</option>
-                        <option value="Suppe">🥣 Suppe</option>
-                        <option value="Salat">🥗 Salat</option>
-                        <option value="Fleisch">🥩 Fleisch</option>
-                        <option value="Fisch">🐟 Fisch</option>
-                        <option value="Grill">🔥 Grill</option>
-                        <option value="Backen">🥐 Backen</option>
-                        <option value="Snacks">🍟 Snacks</option>
-                        <option value="Desserts">🍨 Desserts</option>
+                    <select id="kategorie" class="flex-grow bg-slate-50 border-none rounded-xl p-4 outline-none font-medium text-slate-600" required>
+                        <option value="Suppe">🥣 Suppe</option><option value="Salat">🥗 Salat</option>
+                        <option value="Fleisch">🥩 Fleisch</option><option value="Fisch">🐟 Fisch</option>
+                        <option value="Grill">🔥 Grill</option><option value="Backen">🥐 Backen</option>
+                        <option value="Snacks">🍟 Snacks</option><option value="Desserts">🍨 Desserts</option>
                     </select>
-                    <input type="number" id="personen" placeholder="Pers." class="w-24 bg-slate-50 border-none rounded-xl p-4 focus:ring-2 focus:ring-orange-500 outline-none font-medium" min="1" required>
+                    <input type="number" id="personen" placeholder="Pers." class="w-24 bg-slate-50 border-none rounded-xl p-4 outline-none font-medium" min="1" required>
                 </div>
-                <div class="space-y-2">
-                    <p class="font-bold text-slate-400 uppercase text-[10px] tracking-widest ml-2">Zutaten</p>
-                    <div id="zutaten-liste" class="space-y-3"></div>
-                    <button type="button" onclick="addZutatRow()" class="w-full text-orange-500 text-sm font-bold p-3 border-2 border-dashed border-orange-100 rounded-xl">+ Zutat hinzufügen</button>
-                </div>
-                <textarea id="anleitung" placeholder="Zubereitung (optional)..." class="w-full bg-slate-50 border-none rounded-xl p-4 h-32 focus:ring-2 focus:ring-orange-500 outline-none font-medium"></textarea>
-                <button type="submit" id="saveBtn" class="w-full bg-orange-500 text-white py-4 rounded-2xl font-bold text-lg shadow-lg">Speichern</button>
+                <div id="zutaten-liste" class="space-y-3"></div>
+                <button type="button" onclick="addZutatRow()" class="w-full text-orange-500 text-sm font-bold p-3 border-2 border-dashed border-orange-100 rounded-xl">+ Zutat</button>
+                <textarea id="anleitung" placeholder="Zubereitung..." class="w-full bg-slate-50 border-none rounded-xl p-4 h-32 outline-none focus:ring-2 focus:ring-orange-500 font-medium"></textarea>
+                <button type="submit" id="saveBtn" class="w-full bg-orange-500 text-white py-4 rounded-2xl font-bold shadow-lg">Speichern</button>
             </form>
         </div>
     </div>
+
+    <button onclick="openCreateModal()" class="fixed bottom-6 right-6 w-16 h-16 bg-orange-500 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl z-50 active:scale-90 transition">
+        <i class="fas fa-plus"></i>
+    </button>
 
     <script>
         const BIN_ID = "69876e1f43b1c97be96ce243";
         let API_KEY = localStorage.getItem('kb_api_key');
         const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-        
         const catIcons = { "Suppe": "🥣", "Salat": "🥗", "Fleisch": "🥩", "Fisch": "🐟", "Grill": "🔥", "Backen": "🥐", "Snacks": "🍟", "Desserts": "🍨" };
         let dataStore = { rezepte: [] };
         let currentCategory = "Alle";
 
-        window.onload = () => { 
-            if (!API_KEY) {
-                document.getElementById('login-overlay').classList.remove('hidden');
-            } else {
-                fetchRecipes();
-            }
-        };
+        window.onload = () => { if (!API_KEY) document.getElementById('login-overlay').classList.remove('hidden'); else fetchRecipes(); };
+        function saveKey() { const val = document.getElementById('key-input').value.trim(); if (val) { localStorage.setItem('kb_api_key', val); API_KEY = val; document.getElementById('login-overlay').classList.add('hidden'); fetchRecipes(); } }
+        function logout() { if(confirm("Abmelden?")) { localStorage.removeItem('kb_api_key'); location.reload(); } }
 
-        function saveKey() {
-            const val = document.getElementById('key-input').value.trim();
-            if (val) { localStorage.setItem('kb_api_key', val); API_KEY = val; document.getElementById('login-overlay').classList.add('hidden'); fetchRecipes(); }
-        }
-
-        function logout() { if(confirm("Vom Gerät abmelden?")) { localStorage.removeItem('kb_api_key'); location.reload(); } }
-
-        // Filter Bar initialisieren
+        // Filter Setup
         const filterBar = document.getElementById('filter-bar');
         Object.entries(catIcons).forEach(([name, icon]) => {
             const btn = document.createElement('button');
-            btn.className = "category-pill border bg-white px-5 py-2 rounded-xl text-xs font-bold shadow-sm transition";
+            btn.className = "category-pill border bg-white px-5 py-2 rounded-xl text-xs font-bold transition";
             btn.innerText = `${icon} ${name}`;
             btn.onclick = (e) => setCategory(name, btn);
             filterBar.appendChild(btn);
@@ -126,97 +131,81 @@
 
         function setCategory(kat, btnElement) {
             currentCategory = kat;
-            // UI aktualisieren
             document.querySelectorAll('.category-pill').forEach(btn => btn.classList.remove('active'));
-            if (btnElement) {
-                btnElement.classList.add('active');
-            } else {
-                document.getElementById('btn-alle').classList.add('active');
-            }
+            if (btnElement) btnElement.classList.add('active'); else document.getElementById('btn-alle').classList.add('active');
             applyFilters();
         }
 
         async function fetchRecipes() {
             try {
                 const res = await fetch(`${URL}/latest`, { headers: { "X-Master-Key": API_KEY }});
-                if (!res.ok) throw new Error();
                 const result = await res.json();
                 dataStore.rezepte = result.record.rezepte || [];
                 applyFilters();
-            } catch (err) { alert("API-Key ungültig."); logout(); }
+            } catch (err) { alert("API Fehler."); logout(); }
         }
 
         function applyFilters() {
-            const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            const filtered = dataStore.rezepte.filter(r => {
-                const matchesCat = (currentCategory === "Alle" || r.kategorie === currentCategory);
-                const matchesSearch = (
-                    r.titel.toLowerCase().includes(searchTerm) || 
-                    (r.anleitung && r.anleitung.toLowerCase().includes(searchTerm)) ||
-                    (r.zutaten_neu && r.zutaten_neu.some(z => z.name.toLowerCase().includes(searchTerm)))
-                );
-                return matchesCat && matchesSearch;
-            });
-            renderRecipes(filtered);
+            const s = document.getElementById('search-input').value.toLowerCase();
+            const f = dataStore.rezepte.filter(r => (currentCategory === "Alle" || r.kategorie === currentCategory) && 
+                (r.titel.toLowerCase().includes(s) || (r.anleitung && r.anleitung.toLowerCase().includes(s)) || (r.zutaten_neu && r.zutaten_neu.some(z => z.name.toLowerCase().includes(s)))));
+            renderRecipes(f);
         }
 
         function renderRecipes(list) {
             const grid = document.getElementById('recipe-list');
-            grid.innerHTML = list.length === 0 ? '<div class="col-span-full text-center py-20 opacity-50">Keine Rezepte gefunden.</div>' : '';
+            grid.innerHTML = list.length === 0 ? '<div class="col-span-full text-center py-20 opacity-50">Nichts gefunden.</div>' : '';
             list.forEach(r => {
-                grid.innerHTML += `
-                    <div class="recipe-card bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                        <div class="p-6">
-                            <div class="flex justify-between items-start mb-4">
-                                <span class="bg-slate-100 text-slate-600 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest">${catIcons[r.kategorie] || ''} ${r.kategorie}</span>
-                                <div class="flex items-center gap-4">
-                                    <span class="text-slate-400 text-xs font-bold"><i class="fas fa-users mr-1"></i>${r.personen}</span>
-                                    <button onclick="editRecipe(${r.id})" class="text-slate-400 p-1"><i class="fas fa-edit"></i></button>
-                                    <button onclick="deleteRecipe(${r.id})" class="text-slate-200 hover:text-red-500 p-1"><i class="fas fa-trash"></i></button>
-                                </div>
-                            </div>
-                            <h3 class="text-xl font-extrabold text-slate-800 mb-5 leading-tight">${r.titel}</h3>
-                            <div class="space-y-4 text-sm">
-                                <div class="bg-orange-50/50 rounded-2xl p-4">
-                                    <div class="space-y-2">
-                                        ${(r.zutaten_neu || []).map(z => `
-                                            <div class="flex justify-between border-b border-orange-100/50 pb-1">
-                                                <span class="text-slate-700 font-medium">${z.name}</span>
-                                                <span class="text-slate-400 font-bold">${z.menge}</span>
-                                            </div>`).join('')}
-                                    </div>
-                                </div>
-                                ${r.anleitung ? `<div class="px-2 text-slate-600 italic leading-relaxed">"${r.anleitung}"</div>` : ''}
-                            </div>
+                const card = document.createElement('div');
+                card.className = "recipe-card bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden p-6";
+                card.onclick = () => showRecipeDetails(r);
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="bg-slate-100 text-slate-600 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest">${catIcons[r.kategorie]} ${r.kategorie}</span>
+                        <div class="flex items-center gap-4" onclick="event.stopPropagation()">
+                            <button onclick="editRecipe(${r.id})" class="text-slate-400 p-1"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteRecipe(${r.id})" class="text-slate-200 hover:text-red-500 p-1"><i class="fas fa-trash"></i></button>
                         </div>
-                    </div>`;
+                    </div>
+                    <h3 class="text-xl font-extrabold text-slate-800 leading-tight">${r.titel}</h3>
+                    <p class="text-slate-400 text-xs mt-2 font-bold"><i class="fas fa-users mr-1"></i> ${r.personen} Personen</p>
+                `;
+                grid.appendChild(card);
             });
         }
 
-        function toggleModal(show) { 
-            document.getElementById('modal').classList.toggle('hidden', !show); 
-            document.body.style.overflow = show ? 'hidden' : 'auto';
+        // GROSSANSICHT LOGIK
+        function showRecipeDetails(r) {
+            document.getElementById('view-title').innerText = r.titel;
+            document.getElementById('view-cat-badge').innerText = `${catIcons[r.kategorie]} ${r.kategorie}`;
+            document.getElementById('view-personen').innerText = r.personen;
+            document.getElementById('view-anleitung').innerText = r.anleitung || "Keine Zubereitung hinterlegt.";
+            
+            const zList = document.getElementById('view-zutaten');
+            zList.innerHTML = r.zutaten_neu.map(z => `
+                <div class="flex justify-between border-b border-orange-50 pb-2">
+                    <span class="text-slate-800 font-semibold">${z.name}</span>
+                    <span class="text-orange-500 font-black">${z.menge}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('view-edit-btn').onclick = () => { closeView(); editRecipe(r.id); };
+            document.getElementById('view-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
         }
 
-        function openCreateModal() {
-            document.getElementById('recipe-form').reset();
-            document.getElementById('edit-id').value = '';
-            document.getElementById('modal-title').innerText = 'Neues Rezept';
-            document.getElementById('zutaten-liste').innerHTML = '';
-            addZutatRow();
-            toggleModal(true);
-        }
+        function closeView() { document.getElementById('view-modal').classList.add('hidden'); document.body.style.overflow = 'auto'; }
 
+        // Formular-Handling
+        function toggleModal(show) { document.getElementById('modal').classList.toggle('hidden', !show); }
+        function openCreateModal() { document.getElementById('recipe-form').reset(); document.getElementById('edit-id').value = ''; document.getElementById('modal-title').innerText = 'Neues Rezept'; document.getElementById('zutaten-liste').innerHTML = ''; addZutatRow(); toggleModal(true); }
         function addZutatRow(menge = '', name = '') {
             const container = document.getElementById('zutaten-liste');
             const row = document.createElement('div');
             row.className = "flex gap-2 items-center";
-            row.innerHTML = `<input type="text" placeholder="Menge" value="${menge}" class="zutat-menge w-[35%] bg-slate-50 border rounded-lg p-3 text-sm outline-none focus:ring-1 focus:ring-orange-500">
-                             <input type="text" placeholder="Zutat" value="${name}" class="zutat-name w-[55%] bg-slate-50 border rounded-lg p-3 text-sm outline-none focus:ring-1 focus:ring-orange-500">
-                             <button type="button" onclick="this.parentElement.remove()" class="w-[10%] text-slate-300"><i class="fas fa-times"></i></button>`;
+            row.innerHTML = `<input type="text" placeholder="Menge" value="${menge}" class="zutat-menge w-[35%] bg-slate-50 border rounded-lg p-3 text-sm outline-none"><input type="text" placeholder="Zutat" value="${name}" class="zutat-name w-[55%] bg-slate-50 border rounded-lg p-3 text-sm outline-none"><button type="button" onclick="this.parentElement.remove()" class="w-[10%] text-slate-300"><i class="fas fa-times"></i></button>`;
             container.appendChild(row);
         }
-
         function editRecipe(id) {
             const r = dataStore.rezepte.find(recipe => recipe.id === id);
             if (!r) return;
@@ -228,51 +217,22 @@
             const list = document.getElementById('zutaten-liste');
             list.innerHTML = '';
             r.zutaten_neu.forEach(z => addZutatRow(z.menge, z.name));
-            document.getElementById('modal-title').innerText = 'Rezept ändern';
+            document.getElementById('modal-title').innerText = 'Ändern';
             toggleModal(true);
         }
-
-        async function deleteRecipe(id) {
-            if(!confirm("Rezept löschen?")) return;
-            dataStore.rezepte = dataStore.rezepte.filter(r => r.id !== id);
-            await saveToCloud();
-        }
-
-        async function saveToCloud() {
-            try {
-                await fetch(URL, {
-                    method: 'PUT',
-                    headers: { "Content-Type": "application/json", "X-Master-Key": API_KEY },
-                    body: JSON.stringify(dataStore)
-                });
-                applyFilters();
-            } catch (err) { alert("Fehler beim Speichern!"); }
-        }
-
+        async function deleteRecipe(id) { if(!confirm("Löschen?")) return; dataStore.rezepte = dataStore.rezepte.filter(r => r.id !== id); await saveToCloud(); }
+        async function saveToCloud() { await fetch(URL, { method: 'PUT', headers: { "Content-Type": "application/json", "X-Master-Key": API_KEY }, body: JSON.stringify(dataStore) }); applyFilters(); }
         document.getElementById('recipe-form').onsubmit = async (e) => {
             e.preventDefault();
             const editId = document.getElementById('edit-id').value;
-            const zutatenRows = document.getElementById('zutaten-liste').children;
-            const zutatenArray = [];
-            for (let row of zutatenRows) {
-                const menge = row.querySelector('.zutat-menge').value;
-                const name = row.querySelector('.zutat-name').value;
-                if(name) zutatenArray.push({ menge, name });
+            const zArray = [];
+            for (let row of document.getElementById('zutaten-liste').children) {
+                const m = row.querySelector('.zutat-menge').value;
+                const n = row.querySelector('.zutat-name').value;
+                if(n) zArray.push({ menge: m, name: n });
             }
-            const recipeData = {
-                id: editId ? parseInt(editId) : Date.now(),
-                titel: document.getElementById('titel').value,
-                kategorie: document.getElementById('kategorie').value,
-                personen: document.getElementById('personen').value,
-                zutaten_neu: zutatenArray,
-                anleitung: document.getElementById('anleitung').value
-            };
-            if (editId) {
-                const index = dataStore.rezepte.findIndex(r => r.id === parseInt(editId));
-                dataStore.rezepte[index] = recipeData;
-            } else {
-                dataStore.rezepte.push(recipeData);
-            }
+            const recipeData = { id: editId ? parseInt(editId) : Date.now(), titel: document.getElementById('titel').value, kategorie: document.getElementById('kategorie').value, personen: document.getElementById('personen').value, zutaten_neu: zArray, anleitung: document.getElementById('anleitung').value };
+            if (editId) dataStore.rezepte[dataStore.rezepte.findIndex(r => r.id === parseInt(editId))] = recipeData; else dataStore.rezepte.push(recipeData);
             await saveToCloud();
             toggleModal(false);
         };
