@@ -2,45 +2,61 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gourmet Archiv Safe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#f97316">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Gourmet Archiv App</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; -webkit-tap-highlight-color: transparent; }
-        .recipe-card { transition: all 0.3s ease; cursor: pointer; }
-        .category-pill.active { background-color: #f97316 !important; color: white !important; border-color: #f97316 !important; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #fcfcfd; 
+            -webkit-tap-highlight-color: transparent;
+            user-select: none; /* Verhindert Textmarkierung beim Tippen (App-Gefühl) */
+            overscroll-behavior-y: contain; /* Verhindert Pull-to-Refresh im Browser */
+        }
+        .recipe-card { transition: transform 0.2s active; cursor: pointer; }
+        .recipe-card:active { transform: scale(0.98); }
+        .category-pill.active { background-color: #f97316 !important; color: white !important; border-color: #f97316 !important; }
         .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.05); }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
-        input, select, textarea { font-size: 16px !important; } 
+        
+        /* Optimierung für APK-Ansicht */
+        .safe-area-top { padding-top: env(safe-area-inset-top); }
+        input, select, textarea { font-size: 16px !important; user-select: text; }
     </style>
 </head>
 <body class="pb-24">
 
     <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-6 hidden text-center">
-        <div class="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl">
-            <div class="text-4xl mb-4">🔐</div>
-            <h2 class="text-2xl font-black text-slate-800 mb-2">Tresor gesperrt</h2>
-            <input type="password" id="key-input" placeholder="$2a$10$..." class="w-full bg-slate-50 border rounded-2xl p-4 mb-4 text-center outline-none">
-            <button onclick="saveKey()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold">Anwenden</button>
+        <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl">
+            <div class="text-5xl mb-4 text-orange-500"><i class="fas fa-lock"></i></div>
+            <h2 class="text-2xl font-black text-slate-800 mb-2">App Tresor</h2>
+            <p class="text-slate-400 text-sm mb-8">Schlüssel eingeben</p>
+            <input type="password" id="key-input" placeholder="API-Key" class="w-full bg-slate-50 border rounded-2xl p-5 mb-5 text-center outline-none focus:ring-2 focus:ring-orange-500 font-mono">
+            <button onclick="saveKey()" class="w-full bg-orange-500 text-white py-4 rounded-2xl font-bold shadow-lg active:bg-orange-600 transition">Entsperren</button>
         </div>
     </div>
 
-    <nav class="glass-nav sticky top-0 z-40 p-4">
+    <nav class="glass-nav sticky top-0 z-40 p-4 safe-area-top">
         <div class="container mx-auto flex justify-between items-center px-2">
             <h1 class="text-xl font-extrabold text-slate-800 tracking-tight">🍳 Mein Kochbuch</h1>
-            <button onclick="logout()" class="text-slate-400 p-2"><i class="fas fa-sign-out-alt"></i></button>
+            <button onclick="logout()" class="text-slate-300 p-2"><i class="fas fa-power-off"></i></button>
         </div>
     </nav>
 
-    <div class="sticky top-[61px] z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 p-3 space-y-3 shadow-sm">
+    <div class="sticky top-[68px] z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 p-3 space-y-3 shadow-sm">
         <div class="relative max-w-4xl mx-auto">
-            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-            <input type="text" id="search-input" oninput="applyFilters()" placeholder="Suchen..." class="w-full bg-slate-100/50 border-none rounded-xl py-3 pl-10 pr-4 text-sm outline-none">
+            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="search-input" oninput="applyFilters()" placeholder="Rezept suchen..." class="w-full bg-slate-100/50 border-none rounded-2xl py-3 pl-11 pr-4 text-sm outline-none">
         </div>
         <div id="filter-bar" class="flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide max-w-4xl mx-auto px-1">
-            <button id="btn-alle" onclick="setCategory('Alle', this)" class="category-pill border bg-white px-5 py-2 rounded-xl text-xs font-bold transition active">✨ Alle</button>
+            <button id="btn-alle" onclick="setCategory('Alle', this)" class="category-pill border bg-white px-5 py-2.5 rounded-2xl text-xs font-bold transition active">✨ Alle</button>
         </div>
     </div>
 
@@ -48,29 +64,31 @@
         <div id="recipe-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
     </main>
 
-    <div id="view-modal" class="fixed inset-0 bg-white z-[80] hidden overflow-y-auto animate-in fade-in slide-in-from-bottom duration-300">
-        <div class="max-w-3xl mx-auto pb-20">
-            <div class="sticky top-0 bg-white/90 backdrop-blur-md p-4 flex justify-between items-center border-b z-10">
-                <button onclick="closeView()" class="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full text-slate-600"><i class="fas fa-arrow-left"></i></button>
-                <div id="view-cat-badge" class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">Kategorie</div>
-                <div class="flex gap-2">
-                    <button id="view-edit-btn" class="w-10 h-10 flex items-center justify-center bg-orange-100 rounded-full text-orange-600"><i class="fas fa-edit"></i></button>
-                </div>
+    <div id="view-modal" class="fixed inset-0 bg-white z-[80] hidden overflow-y-auto">
+        <div class="max-w-3xl mx-auto pb-32">
+            <div class="sticky top-0 bg-white/95 backdrop-blur-md p-4 flex justify-between items-center border-b z-10 safe-area-top">
+                <button onclick="closeView()" class="w-12 h-12 flex items-center justify-center bg-slate-50 rounded-2xl text-slate-800 active:scale-90 transition"><i class="fas fa-chevron-left"></i></button>
+                <div id="view-cat-badge" class="bg-orange-100 text-orange-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest leading-none">Kategorie</div>
+                <button id="view-edit-btn" class="w-12 h-12 flex items-center justify-center bg-orange-50 rounded-2xl text-orange-600 active:scale-90 transition"><i class="fas fa-pen"></i></button>
             </div>
-            <div class="p-6 md:p-12">
-                <h2 id="view-title" class="text-3xl md:text-5xl font-black text-slate-900 mb-6 leading-tight">Rezept Name</h2>
-                <div class="flex items-center gap-4 mb-10 text-slate-500 font-bold bg-slate-50 p-4 rounded-2xl w-fit">
-                    <i class="fas fa-users text-orange-500"></i> <span id="view-personen">?</span> Personen
+            <div class="p-8">
+                <h2 id="view-title" class="text-3xl font-black text-slate-900 mb-6 leading-tight"></h2>
+                <div class="flex items-center gap-3 mb-10 text-slate-500 font-bold bg-slate-100/50 p-4 rounded-3xl w-fit text-sm">
+                    <i class="fas fa-users text-orange-500"></i> <span id="view-personen"></span> Portionen
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    <div class="md:col-span-1">
-                        <h4 class="text-orange-500 font-black uppercase text-xs tracking-widest mb-4 border-b pb-2">Zutaten</h4>
-                        <div id="view-zutaten" class="space-y-3 text-lg"></div>
+                <div class="space-y-12">
+                    <div>
+                        <h4 class="text-orange-500 font-black uppercase text-[10px] tracking-widest mb-4 flex items-center gap-2">
+                            <span class="w-8 h-[2px] bg-orange-200"></span> Zutaten
+                        </h4>
+                        <div id="view-zutaten" class="space-y-4 text-base"></div>
                     </div>
-                    <div class="md:col-span-2">
-                        <h4 class="text-orange-500 font-black uppercase text-xs tracking-widest mb-4 border-b pb-2">Zubereitung</h4>
-                        <p id="view-anleitung" class="text-slate-700 leading-relaxed text-xl whitespace-pre-wrap font-medium italic"></p>
+                    <div>
+                        <h4 class="text-orange-500 font-black uppercase text-[10px] tracking-widest mb-4 flex items-center gap-2">
+                            <span class="w-8 h-[2px] bg-orange-200"></span> Zubereitung
+                        </h4>
+                        <p id="view-anleitung" class="text-slate-700 leading-relaxed text-lg whitespace-pre-wrap font-medium"></p>
                     </div>
                 </div>
             </div>
@@ -78,32 +96,32 @@
     </div>
 
     <div id="modal" class="fixed inset-0 bg-slate-900/80 z-[90] hidden flex items-end sm:items-center justify-center backdrop-blur-sm">
-        <div class="bg-white rounded-t-[2rem] sm:rounded-[2rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-300">
-            <div class="p-6 border-b flex justify-between items-center">
-                <h2 id="modal-title" class="text-xl font-extrabold text-slate-800">Neues Rezept</h2>
-                <button onclick="toggleModal(false)" class="bg-slate-100 text-slate-500 w-10 h-10 rounded-full">&times;</button>
+        <div class="bg-white rounded-t-[3rem] sm:rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-300">
+            <div class="p-7 border-b flex justify-between items-center">
+                <h2 id="modal-title" class="text-xl font-black text-slate-800 tracking-tight">Neues Rezept</h2>
+                <button onclick="toggleModal(false)" class="bg-slate-100 text-slate-400 w-10 h-10 rounded-full">&times;</button>
             </div>
-            <form id="recipe-form" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto pb-10">
+            <form id="recipe-form" class="p-7 space-y-5 max-h-[85vh] overflow-y-auto pb-12">
                 <input type="hidden" id="edit-id">
-                <input type="text" id="titel" placeholder="Titel" class="w-full bg-slate-50 border-none rounded-xl p-4 outline-none focus:ring-2 focus:ring-orange-500 font-medium" required>
+                <input type="text" id="titel" placeholder="Titel" class="w-full bg-slate-50 border-none rounded-2xl p-5 outline-none focus:ring-2 focus:ring-orange-500 font-bold" required>
                 <div class="flex gap-3">
-                    <select id="kategorie" class="flex-grow bg-slate-50 border-none rounded-xl p-4 outline-none font-medium text-slate-600" required>
+                    <select id="kategorie" class="flex-grow bg-slate-50 border-none rounded-2xl p-5 outline-none font-bold text-slate-600 appearance-none" required>
                         <option value="Suppe">🥣 Suppe</option><option value="Salat">🥗 Salat</option>
                         <option value="Fleisch">🥩 Fleisch</option><option value="Fisch">🐟 Fisch</option>
                         <option value="Grill">🔥 Grill</option><option value="Backen">🥐 Backen</option>
                         <option value="Snacks">🍟 Snacks</option><option value="Desserts">🍨 Desserts</option>
                     </select>
-                    <input type="number" id="personen" placeholder="Pers." class="w-24 bg-slate-50 border-none rounded-xl p-4 outline-none font-medium" min="1" required>
+                    <input type="number" id="personen" placeholder="Portionen" class="w-28 bg-slate-50 border-none rounded-2xl p-5 outline-none font-bold" min="1" required>
                 </div>
                 <div id="zutaten-liste" class="space-y-3"></div>
-                <button type="button" onclick="addZutatRow()" class="w-full text-orange-500 text-sm font-bold p-3 border-2 border-dashed border-orange-100 rounded-xl">+ Zutat</button>
-                <textarea id="anleitung" placeholder="Zubereitung..." class="w-full bg-slate-50 border-none rounded-xl p-4 h-32 outline-none focus:ring-2 focus:ring-orange-500 font-medium"></textarea>
-                <button type="submit" id="saveBtn" class="w-full bg-orange-500 text-white py-4 rounded-2xl font-bold shadow-lg">Speichern</button>
+                <button type="button" onclick="addZutatRow()" class="w-full text-orange-500 text-sm font-black p-4 border-2 border-dashed border-orange-100 rounded-2xl active:bg-orange-50">+ Zutat hinzufügen</button>
+                <textarea id="anleitung" placeholder="Schritte (optional)..." class="w-full bg-slate-50 border-none rounded-2xl p-5 h-36 outline-none focus:ring-2 focus:ring-orange-500 font-medium"></textarea>
+                <button type="submit" id="saveBtn" class="w-full bg-orange-500 text-white py-5 rounded-2xl font-black text-lg shadow-xl active:scale-95 transition">In die Cloud sichern</button>
             </form>
         </div>
     </div>
 
-    <button onclick="openCreateModal()" class="fixed bottom-6 right-6 w-16 h-16 bg-orange-500 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl z-50 active:scale-90 transition">
+    <button onclick="openCreateModal()" class="fixed bottom-8 right-8 w-16 h-16 bg-orange-500 text-white rounded-2xl shadow-2xl flex items-center justify-center text-2xl z-50 active:scale-90 transition transform rotate-0">
         <i class="fas fa-plus"></i>
     </button>
 
@@ -119,11 +137,10 @@
         function saveKey() { const val = document.getElementById('key-input').value.trim(); if (val) { localStorage.setItem('kb_api_key', val); API_KEY = val; document.getElementById('login-overlay').classList.add('hidden'); fetchRecipes(); } }
         function logout() { if(confirm("Abmelden?")) { localStorage.removeItem('kb_api_key'); location.reload(); } }
 
-        // Filter Setup
         const filterBar = document.getElementById('filter-bar');
         Object.entries(catIcons).forEach(([name, icon]) => {
             const btn = document.createElement('button');
-            btn.className = "category-pill border bg-white px-5 py-2 rounded-xl text-xs font-bold transition";
+            btn.className = "category-pill border bg-white px-5 py-2.5 rounded-2xl text-xs font-black transition";
             btn.innerText = `${icon} ${name}`;
             btn.onclick = (e) => setCategory(name, btn);
             filterBar.appendChild(btn);
@@ -140,7 +157,7 @@
             try {
                 const res = await fetch(`${URL}/latest`, { headers: { "X-Master-Key": API_KEY }});
                 const result = await res.json();
-                dataStore.rezepte = result.record.rezepte || [];
+                dataStore.rezepte = (result.record.rezepte || []).reverse();
                 applyFilters();
             } catch (err) { alert("API Fehler."); logout(); }
         }
@@ -154,41 +171,40 @@
 
         function renderRecipes(list) {
             const grid = document.getElementById('recipe-list');
-            grid.innerHTML = list.length === 0 ? '<div class="col-span-full text-center py-20 opacity-50">Nichts gefunden.</div>' : '';
+            grid.innerHTML = list.length === 0 ? '<div class="col-span-full text-center py-20 opacity-30 italic text-sm font-bold">Keine Rezepte gefunden...</div>' : '';
             list.forEach(r => {
                 const card = document.createElement('div');
-                card.className = "recipe-card bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden p-6";
+                card.className = "recipe-card bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden p-7";
                 card.onclick = () => showRecipeDetails(r);
                 card.innerHTML = `
                     <div class="flex justify-between items-start mb-4">
-                        <span class="bg-slate-100 text-slate-600 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest">${catIcons[r.kategorie]} ${r.kategorie}</span>
-                        <div class="flex items-center gap-4" onclick="event.stopPropagation()">
-                            <button onclick="editRecipe(${r.id})" class="text-slate-400 p-1"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteRecipe(${r.id})" class="text-slate-200 hover:text-red-500 p-1"><i class="fas fa-trash"></i></button>
+                        <span class="bg-slate-50 text-slate-500 text-[9px] px-3 py-1.5 rounded-full font-black uppercase tracking-widest">${catIcons[r.kategorie]} ${r.kategorie}</span>
+                        <div class="flex items-center gap-5" onclick="event.stopPropagation()">
+                            <button onclick="editRecipe(${r.id})" class="text-slate-300 active:text-orange-500"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteRecipe(${r.id})" class="text-slate-100 active:text-red-500"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
-                    <h3 class="text-xl font-extrabold text-slate-800 leading-tight">${r.titel}</h3>
-                    <p class="text-slate-400 text-xs mt-2 font-bold"><i class="fas fa-users mr-1"></i> ${r.personen} Personen</p>
+                    <h3 class="text-xl font-black text-slate-800 leading-snug">${r.titel}</h3>
+                    <div class="mt-4 flex items-center gap-2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                        <i class="fas fa-users"></i> ${r.personen} Personen
+                    </div>
                 `;
                 grid.appendChild(card);
             });
         }
 
-        // GROSSANSICHT LOGIK
         function showRecipeDetails(r) {
             document.getElementById('view-title').innerText = r.titel;
             document.getElementById('view-cat-badge').innerText = `${catIcons[r.kategorie]} ${r.kategorie}`;
             document.getElementById('view-personen').innerText = r.personen;
-            document.getElementById('view-anleitung').innerText = r.anleitung || "Keine Zubereitung hinterlegt.";
-            
+            document.getElementById('view-anleitung').innerText = r.anleitung || "Guten Appetit!";
             const zList = document.getElementById('view-zutaten');
             zList.innerHTML = r.zutaten_neu.map(z => `
-                <div class="flex justify-between border-b border-orange-50 pb-2">
-                    <span class="text-slate-800 font-semibold">${z.name}</span>
-                    <span class="text-orange-500 font-black">${z.menge}</span>
+                <div class="flex justify-between items-center bg-slate-50/50 p-4 rounded-2xl border-l-4 border-orange-500">
+                    <span class="text-slate-900 font-bold">${z.name}</span>
+                    <span class="text-orange-600 font-black text-sm">${z.menge}</span>
                 </div>
             `).join('');
-            
             document.getElementById('view-edit-btn').onclick = () => { closeView(); editRecipe(r.id); };
             document.getElementById('view-modal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
@@ -196,14 +212,13 @@
 
         function closeView() { document.getElementById('view-modal').classList.add('hidden'); document.body.style.overflow = 'auto'; }
 
-        // Formular-Handling
         function toggleModal(show) { document.getElementById('modal').classList.toggle('hidden', !show); }
         function openCreateModal() { document.getElementById('recipe-form').reset(); document.getElementById('edit-id').value = ''; document.getElementById('modal-title').innerText = 'Neues Rezept'; document.getElementById('zutaten-liste').innerHTML = ''; addZutatRow(); toggleModal(true); }
         function addZutatRow(menge = '', name = '') {
             const container = document.getElementById('zutaten-liste');
             const row = document.createElement('div');
             row.className = "flex gap-2 items-center";
-            row.innerHTML = `<input type="text" placeholder="Menge" value="${menge}" class="zutat-menge w-[35%] bg-slate-50 border rounded-lg p-3 text-sm outline-none"><input type="text" placeholder="Zutat" value="${name}" class="zutat-name w-[55%] bg-slate-50 border rounded-lg p-3 text-sm outline-none"><button type="button" onclick="this.parentElement.remove()" class="w-[10%] text-slate-300"><i class="fas fa-times"></i></button>`;
+            row.innerHTML = `<input type="text" placeholder="Menge" value="${menge}" class="zutat-menge w-[35%] bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold outline-none"><input type="text" placeholder="Zutat" value="${name}" class="zutat-name w-[55%] bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold outline-none"><button type="button" onclick="this.parentElement.remove()" class="w-[10%] text-slate-300"><i class="fas fa-times"></i></button>`;
             container.appendChild(row);
         }
         function editRecipe(id) {
@@ -217,11 +232,12 @@
             const list = document.getElementById('zutaten-liste');
             list.innerHTML = '';
             r.zutaten_neu.forEach(z => addZutatRow(z.menge, z.name));
-            document.getElementById('modal-title').innerText = 'Ändern';
+            document.getElementById('modal-title').innerText = 'Rezept ändern';
             toggleModal(true);
         }
         async function deleteRecipe(id) { if(!confirm("Löschen?")) return; dataStore.rezepte = dataStore.rezepte.filter(r => r.id !== id); await saveToCloud(); }
-        async function saveToCloud() { await fetch(URL, { method: 'PUT', headers: { "Content-Type": "application/json", "X-Master-Key": API_KEY }, body: JSON.stringify(dataStore) }); applyFilters(); }
+        async function saveToCloud() { await fetch(URL, { method: 'PUT', headers: { "Content-Type": "application/json", "X-Master-Key": API_KEY }, body: JSON.stringify({rezepte: dataStore.rezepte.reverse()}) }); fetchRecipes(); }
+        
         document.getElementById('recipe-form').onsubmit = async (e) => {
             e.preventDefault();
             const editId = document.getElementById('edit-id').value;
