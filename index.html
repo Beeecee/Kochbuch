@@ -97,7 +97,7 @@
 
             <div class="space-y-2 border-b pb-6">
                 <label class="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">A: Schnell-Eingabe (Liste)</label>
-                <textarea id="zutaten-smart" placeholder="Beispiel:&#10;250g Mehl&#10;1 EL Zucker" class="w-full bg-slate-50 border-none rounded-2xl p-5 h-24 outline-none focus:ring-2 focus:ring-orange-500 font-medium text-sm"></textarea>
+                <textarea id="zutaten-smart" placeholder="Beispiel:&#10;[Soße]&#10;250g Mehl&#10;1 EL Zucker" class="w-full bg-slate-50 border-none rounded-2xl p-5 h-24 outline-none focus:ring-2 focus:ring-orange-500 font-medium text-sm"></textarea>
             </div>
 
             <div class="space-y-3">
@@ -134,6 +134,13 @@
         lines.forEach(line => {
             line = line.trim();
             if(!line) return;
+
+            // Header detection: ends with : or starts with # or wrapped in []
+            if (line.endsWith(':') || line.startsWith('#') || (line.startsWith('[') && line.endsWith(']'))) {
+                result.push({ menge: "", name: line });
+                return;
+            }
+
             const regex = /^([\d,.\/]*)\s?([a-zA-ZäöüÄÖÜ]*)\s?(.*)$/;
             const match = line.match(regex);
             if (match) {
@@ -211,12 +218,23 @@
         document.getElementById('view-personen').innerText = r.personen;
         document.getElementById('view-anleitung').innerText = r.anleitung || "";
         const zList = document.getElementById('view-zutaten');
-        zList.innerHTML = (r.zutaten_neu || []).map(z => `
-            <div class="flex justify-between border-b border-orange-50 pb-2">
-                <span class="text-slate-800 font-bold">${z.name}</span>
-                <span class="text-orange-500 font-black">${z.menge}</span>
-            </div>
-        `).join('');
+        zList.innerHTML = (r.zutaten_neu || []).map((z, idx) => {
+            const isHeader = !z.menge && (z.name.endsWith(':') || z.name.startsWith('#') || (z.name.startsWith('[') && z.name.endsWith(']')));
+            if (isHeader) {
+                const title = z.name.replace(/[:#\[\]]/g, '').trim();
+                return `
+                    <div class="${idx > 0 ? 'pt-8' : 'pt-2'} pb-2 border-b-2 border-slate-100 mb-2">
+                        <span class="text-slate-900 font-black text-[11px] uppercase tracking-widest">${title}</span>
+                    </div>
+                `;
+            }
+            return `
+                <div class="flex justify-between border-b border-orange-50 pb-2">
+                    <span class="text-orange-500 font-black">${z.menge}</span>
+                    <span class="text-slate-800 font-bold">${z.name}</span>
+                </div>
+            `;
+        }).join('');
         document.getElementById('view-edit-btn').onclick = () => { closeView(); editRecipe(r.id); };
         document.getElementById('view-modal').classList.remove('hidden');
     }
