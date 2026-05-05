@@ -145,7 +145,7 @@
 
     function renderFilterBar() {
         const bar = document.getElementById('filter-bar');
-        Object.entries(catIcons).forEach(([name, icon]) => {
+        Object.entries(catIcons).sort((a, b) => a[0].localeCompare(b[0])).forEach(([name, icon]) => {
             const btn = document.createElement('button');
             btn.className = "category-pill border bg-white px-5 py-2 rounded-xl text-xs font-black transition";
             btn.innerText = `${icon} ${name}`;
@@ -156,7 +156,7 @@
 
     function fillCategorySelect() {
         const select = document.getElementById('kategorie');
-        Object.entries(catIcons).forEach(([name, icon]) => {
+        Object.entries(catIcons).sort((a, b) => a[0].localeCompare(b[0])).forEach(([name, icon]) => {
             const opt = document.createElement('option');
             opt.value = name; opt.innerText = `${icon} ${name}`;
             select.appendChild(opt);
@@ -168,7 +168,7 @@
         try {
             const res = await fetch(GOOGLE_SCRIPT_URL);
             const result = await res.json();
-            dataStore.rezepte = (result.record.rezepte || []).reverse();
+            dataStore.rezepte = (result.record.rezepte || []).sort((a, b) => a.titel.localeCompare(b.titel));
             applyFilters();
         } catch (err) { console.error(err); }
     }
@@ -237,7 +237,8 @@
     function applyFilters() {
         const s = document.getElementById('search-input').value.toLowerCase();
         const f = dataStore.rezepte.filter(r => (currentCategory === "Alle" || r.kategorie === currentCategory) &&
-            (r.titel.toLowerCase().includes(s) || (r.anleitung && r.anleitung.toLowerCase().includes(s))));
+            (r.titel.toLowerCase().includes(s) || (r.anleitung && r.anleitung.toLowerCase().includes(s))))
+            .sort((a, b) => a.titel.localeCompare(b.titel));
         renderRecipes(f);
     }
 
